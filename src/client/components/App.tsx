@@ -78,8 +78,6 @@ export function App() {
           {display && (
             <CreatureView
               display={display}
-              onRefresh={refresh}
-              refreshing={status === "loading"}
               isDemo={isDemo}
             />
           )}
