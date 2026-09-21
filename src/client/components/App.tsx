@@ -52,10 +52,6 @@ export function App() {
                 <br className="mobile-break" /> Grow together
                 <span className="title-star">✳</span>
               </h1>
-              <p className="intro-copy">
-                Your everyday ups, downs, and well-earned naps. A little friend
-                for all of it.
-              </p>
             </div>
             <span className="date-stamp">
               {new Intl.DateTimeFormat("en-GB", {
