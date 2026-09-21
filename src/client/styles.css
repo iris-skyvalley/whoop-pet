@@ -1223,3 +1223,128 @@ h1 {
     padding: 8px 10px;
   }
 }
+
+/* Keep the desktop shell within the viewport; short windows scroll inside main. */
+@media (min-width: 701px) {
+  .app {
+    height: 100vh;
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: 68px minmax(0, 1fr) 42px;
+  }
+  .site-header {
+    height: auto;
+  }
+  .main-content {
+    min-height: 0;
+    padding: 20px 0 6px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+  .intro {
+    flex-shrink: 0;
+    margin-bottom: 20px;
+  }
+  .intro h1 {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  .date-stamp {
+    height: 65px;
+  }
+  .companion-layout {
+    flex: 1;
+    min-height: 440px;
+    align-items: stretch;
+  }
+  .pet-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .pet-card-top,
+  .growth-status,
+  .pet-card-bottom {
+    flex-shrink: 0;
+  }
+  .habitat {
+    flex: 1;
+    height: auto;
+    min-height: 180px;
+    container-type: size;
+  }
+  .pet-touch {
+    width: min(310px, calc(116cqh - 87px));
+  }
+  .daily-panel {
+    align-self: center;
+  }
+  .demo-strip {
+    flex-shrink: 0;
+    margin-top: 18px;
+    padding: 12px 0;
+  }
+  .site-footer {
+    align-items: center;
+    padding: 0;
+  }
+  .privacy-page {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .empty-state {
+    min-height: 150px;
+    flex: 1;
+  }
+  .error-note {
+    flex-shrink: 0;
+  }
+}
+@media (min-width: 701px) and (max-height: 800px) {
+  .app {
+    grid-template-rows: 58px minmax(0, 1fr) 34px;
+  }
+  .main-content {
+    padding-top: 12px;
+  }
+  .intro {
+    margin-bottom: 14px;
+  }
+  .intro h1 {
+    font-size: 30px;
+  }
+  .intro-copy {
+    font-size: 11px;
+  }
+  .companion-layout {
+    min-height: 415px;
+  }
+  .pet-card-top {
+    padding-top: 16px;
+  }
+  .growth-status {
+    margin-top: 14px;
+  }
+  .pet-card-bottom {
+    padding-top: 13px;
+    padding-bottom: 13px;
+  }
+  .panel-description {
+    margin-bottom: 16px;
+  }
+  .metric-list {
+    gap: 14px;
+  }
+  .daily-note {
+    margin-top: 20px;
+  }
+  .actions {
+    margin-top: 15px;
+  }
+  .demo-strip {
+    margin-top: 12px;
+    padding: 10px 0;
+  }
+}
