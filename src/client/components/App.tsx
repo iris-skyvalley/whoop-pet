@@ -2,190 +2,99 @@ import React, { useState, useEffect } from "react";
 import { useCreature } from "../hooks/useCreature.js";
 import { CreatureView } from "./CreatureView.js";
 import { PrivacyPolicy } from "./PrivacyPolicy.js";
+import { Icon } from "./Icon.js";
+import "../styles.css";
 
-const styles: Record<string, React.CSSProperties> = {
-  app: {
-    height: "100vh",
-    background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)",
-    color: "#e0e0e0",
-    fontFamily: "'Courier New', monospace",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "20px",
-  },
-  header: {
-    textAlign: "center" as const,
-    marginBottom: "20px",
-  },
-  title: {
-    fontSize: "3rem",
-    fontFamily: "'Bangers', cursive",
-    fontWeight: "normal",
-    letterSpacing: "3px",
-    background: "linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    margin: 0,
-  },
-  subtitle: {
-    color: "#888",
-    fontSize: "0.9rem",
-    marginTop: "4px",
-  },
-  loading: {
-    fontSize: "1.5rem",
-    marginTop: "100px",
-    animation: "pulse 1.5s infinite",
-  },
-  error: {
-    color: "#ff6b6b",
-    marginTop: "100px",
-    textAlign: "center" as const,
-  },
-  demoBanner: {
-    background: "rgba(255, 217, 61, 0.15)",
-    border: "1px solid rgba(255, 217, 61, 0.3)",
-    borderRadius: "10px",
-    padding: "12px 20px",
-    marginBottom: "16px",
-    textAlign: "center" as const,
-    fontSize: "0.85rem",
-    color: "#ffd93d",
-    maxWidth: "480px",
-    width: "100%",
-  },
-  connectBtn: {
-    display: "inline-block",
-    marginTop: "8px",
-    padding: "8px 20px",
-    background: "linear-gradient(135deg, #4d96ff, #6bcb77)",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontFamily: "'Courier New', monospace",
-    fontWeight: "bold",
-    fontSize: "0.85rem",
-    textDecoration: "none",
-  },
-  footer: {
-    marginTop: "40px",
-    paddingTop: "16px",
-    borderTop: "1px solid rgba(255,255,255,0.1)",
-    fontSize: "0.8rem",
-    color: "#666",
-  },
-  footerLink: {
-    color: "#888",
-    textDecoration: "none",
-  },
-};
-
-function useRoute() {
+export function App() {
   const [path, setPath] = useState(window.location.pathname);
-
+  const { display, status, isDemo, refresh } = useCreature();
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-
-  const navigate = (to: string) => {
+  const navigate = (event: React.MouseEvent, to: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+    event.preventDefault();
     window.history.pushState({}, "", to);
     setPath(to);
+    window.scrollTo(0, 0);
   };
 
-  return { path, navigate };
-}
-
-export function App() {
-  const { path, navigate } = useRoute();
-  const { display, status, isDemo, refresh } = useCreature();
-
-  if (path === "/privacy") {
-    return (
-      <div style={styles.app}>
-        <style>{`
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { margin: 0; }
-        `}</style>
-        <PrivacyPolicy />
-      </div>
-    );
-  }
-
   return (
-    <div style={styles.app}>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { margin: 0; }
-      `}</style>
-
-      <header style={styles.header}>
-        <h1 style={styles.title}>Whoopy</h1>
-        <p style={styles.subtitle}>Your WHOOP-powered Tamagotchi</p>
+    <div className="app">
+      <header className="site-header">
+        <a
+          className="wordmark"
+          href="/"
+          onClick={(e) => navigate(e, "/")}
+          aria-label="Whoopy home"
+        >
+          <span className="brand-icon">
+            <Icon name="paw" />
+          </span>
+          whoopy
+        </a>
+        <span className="header-note">a little you, with paws.</span>
+        <span className="edition">YOUR DAILY COMPANION</span>
       </header>
-
-      {status === "loading" && (
-        <div style={styles.loading}>Loading your creature...</div>
-      )}
-
-      {status === "error" && (
-        <div style={styles.error}>
-          <p>Something went wrong!</p>
-          <button
-            onClick={refresh}
-            style={{
-              marginTop: "16px",
-              padding: "10px 20px",
-              background: "#4d96ff",
-              border: "none",
-              borderRadius: "8px",
-              color: "white",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {status === "ready" && display && (
-        <>
-          {isDemo && (
-            <div style={styles.demoBanner}>
-              Demo Mode — Using simulated health data
-              <br />
-              <a href="/api/auth" style={styles.connectBtn}>
-                Connect WHOOP for Real Data
-              </a>
+      {path === "/privacy" ? (
+        <main className="privacy-page">
+          <PrivacyPolicy />
+        </main>
+      ) : (
+        <main className="main-content">
+          <div className="intro">
+            <div>
+              <h1>
+                Feel good.
+                <br className="mobile-break" /> Grow together
+                <span className="title-star">✳</span>
+              </h1>
+              <p className="intro-copy">
+                Your everyday ups, downs, and well-earned naps. A little friend
+                for all of it.
+              </p>
+            </div>
+            <span className="date-stamp">
+              {new Intl.DateTimeFormat("en-GB", {
+                day: "2-digit",
+                month: "short",
+              }).format(new Date())}
+              <small>one day at a time</small>
+            </span>
+          </div>
+          {status === "loading" && !display && (
+            <div className="empty-state" role="status">
+              <span className="loading-paw">
+                <Icon name="paw" />
+              </span>
+              Waking up your little friend…
             </div>
           )}
-          <CreatureView display={display} onRefresh={refresh} />
-        </>
+          {status === "error" && (
+            <div className="error-note" role="alert">
+              We couldn’t update your companion.{" "}
+              <button onClick={refresh}>Try again</button>
+            </div>
+          )}
+          {display && (
+            <CreatureView
+              display={display}
+              onRefresh={refresh}
+              refreshing={status === "loading"}
+              isDemo={isDemo}
+            />
+          )}
+        </main>
       )}
-
-      <footer style={styles.footer}>
-        <a
-          href="/privacy"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/privacy");
-          }}
-          style={styles.footerLink}
-        >
-          Privacy Policy
+      <footer className="site-footer">
+        <span>
+          Made for your human days. <Icon name="heart" />
+        </span>
+        <a href="/privacy" onClick={(e) => navigate(e, "/privacy")}>
+          Privacy policy <span aria-hidden="true">↗</span>
         </a>
       </footer>
     </div>
