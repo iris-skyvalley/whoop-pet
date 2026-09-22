@@ -29,6 +29,7 @@ export interface CreatureState {
   evolution_stage: EvolutionStage;
   health_points: number; // 0-100
   streak_days: number;
+  age_days?: number; // Calendar day of life, starting at 1; independent of streak
   is_alive: boolean;
   traits: string[]; // JSON array of active traits
   created_at: string;

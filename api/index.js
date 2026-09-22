@@ -213,6 +213,14 @@ function getShareText(creature, metrics) {
   return lines.join("\n");
 }
 
+// Age is elapsed calendar days since the first egg, including missed days.
+async function getCreatureAgeDays(sql, userId, date, isDemo) {
+  if (isDemo) return 1;
+  var rows = await sql`SELECT MIN(date) AS birth_date FROM creature_states WHERE user_id = ${userId}`;
+  var birthDate = rows[0] && rows[0].birth_date || date;
+  return Math.max(1, Math.floor((Date.parse(date) - Date.parse(birthDate)) / 86400000) + 1);
+}
+
 // --- Core: update creature (with DB persistence) ---
 async function updateCreature(sql, userId, user, isDemo, date) {
   // Check cached metrics in DB
@@ -229,6 +237,7 @@ async function updateCreature(sql, userId, user, isDemo, date) {
       var creatureRows = await sql`SELECT * FROM creature_states WHERE user_id = ${userId} AND date = ${date}`;
       if (creatureRows[0]) {
         var c = creatureRows[0];
+        c.age_days = await getCreatureAgeDays(sql, userId, date, isDemo);
         c.traits = typeof c.traits === "string" ? JSON.parse(c.traits) : (c.traits || []);
         return {
           creature: c,
@@ -299,6 +308,7 @@ async function updateCreature(sql, userId, user, isDemo, date) {
     evolution_stage: calculateEvolution(streak),
     health_points: hp,
     streak_days: streak,
+    age_days: await getCreatureAgeDays(sql, userId, date, isDemo),
     is_alive: isAlive,
     traits: traits,
   };

@@ -114,16 +114,24 @@ export function CreatureView({
                 <p className="eyebrow">YOUR LITTLE SIDEKICK</p>
                 <h2>{creature.name}</h2>
                 <span className="pet-stage-label">
-                  {creature.evolution_stage} · Growth day {growthDays}
+                  {creature.evolution_stage}
+                  <span className="secondary-streak">
+                    <Icon name="bolt" />
+                    {growthDays}-day streak
+                  </span>
                 </span>
               </div>
               <div
-                className="streak-badge"
-                aria-label={`${growthDays} day streak`}
+                className="age-badge"
+                aria-label={
+                  creature.age_days == null
+                    ? "Age unavailable"
+                    : `Age: day ${creature.age_days} of life`
+                }
               >
-                <Icon name="bolt" />
-                <strong>{growthDays}</strong>
-                <span>day streak</span>
+                <span>DAY</span>
+                <strong>{creature.age_days ?? "—"}</strong>
+                <span>of life</span>
               </div>
             </div>
             <div className="growth-status">

@@ -22,3 +22,13 @@ test("expired cache does not age the pet or compound health changes within one d
     next.creature.health_points,
   );
 });
+
+test("age includes missed days while streak resets, including cached responses", async () => {
+  const user = ensureDemoUser();
+  const first = await updateCreature(user.id, "2026-09-26");
+  assert.equal(first.creature.age_days, 6);
+  assert.equal(first.creature.streak_days, 1);
+  const cached = await updateCreature(user.id, "2026-09-26");
+  assert.equal(cached.creature.age_days, 6);
+  assert.equal(cached.creature.streak_days, 1);
+});

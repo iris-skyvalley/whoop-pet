@@ -10,6 +10,7 @@ import {
   upsertCreatureState,
   getLatestCreature,
   getPreviousCreature,
+  getCreatureAgeDays,
   getStreakCount,
   upsertDailyMetrics,
   getMetricsByDate,
@@ -152,7 +153,7 @@ function buildDisplay(
   metrics: DailyMetrics
 ): CreatureDisplay {
   return {
-    creature,
+    creature: { ...creature, age_days: getCreatureAgeDays(creature.user_id, creature.date) },
     metrics,
     ascii_art: getAsciiArt(creature),
     status_message: getStatusMessage(creature),

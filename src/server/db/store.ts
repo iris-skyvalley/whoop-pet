@@ -157,6 +157,12 @@ export function getLatestCreature(
   return latestCreature.get(userId);
 }
 
+export function getCreatureAgeDays(userId: string, date: string): number {
+  const firstDate = [...creatures.values()].filter(c => c.user_id === userId)
+    .map(c => c.date).sort()[0] ?? date;
+  return Math.max(1, Math.floor((Date.parse(date) - Date.parse(firstDate)) / 86400000) + 1);
+}
+
 export function getPreviousCreature(userId: string, beforeDate: string): CreatureState | undefined {
   return [...creatures.values()].filter(c => c.user_id === userId && c.date < beforeDate)
     .sort((a, b) => b.date.localeCompare(a.date))[0];
