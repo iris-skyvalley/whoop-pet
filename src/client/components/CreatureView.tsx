@@ -155,20 +155,6 @@ export function CreatureView({
               >
                 <span style={{ transform: `scaleX(${growthProgress})` }} />
               </div>
-              <div className="growth-milestones">
-                {stages.map((stage, index) => (
-                  <span
-                    key={stage.name}
-                    className={index === currentStageIndex ? "current" : ""}
-                    aria-current={
-                      index === currentStageIndex ? "step" : undefined
-                    }
-                  >
-                    {stage.name}
-                    <small>Day {stage.day}</small>
-                  </span>
-                ))}
-              </div>
             </div>
             <div className="habitat">
               <div className="sun-doodle" aria-hidden="true">
