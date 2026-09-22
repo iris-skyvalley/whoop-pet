@@ -91,7 +91,7 @@ module.exports = async function handler(req, res) {
       var expiresIn = tokens.expires_in || 3600;
 
       var profileRes = await fetch(
-        "https://api.prod.whoop.com/developer/v1/user/profile/basic",
+        "https://api.prod.whoop.com/developer/v2/user/profile/basic",
         { headers: { Authorization: "Bearer " + accessToken } }
       );
       if (!profileRes.ok) {
@@ -129,7 +129,7 @@ module.exports = async function handler(req, res) {
       client_id: process.env.WHOOP_CLIENT_ID,
       redirect_uri: process.env.WHOOP_REDIRECT_URI || "",
       response_type: "code",
-      scope: "read:recovery read:sleep read:workout read:profile read:cycles",
+      scope: "offline read:recovery read:sleep read:workout read:profile read:cycles",
       state: Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2),
     });
 

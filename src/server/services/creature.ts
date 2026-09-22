@@ -1,3 +1,4 @@
+import { isLegacyFallback } from "../../shared/whoop-client.cjs";
 import type {
   DailyMetrics,
   CreatureState,
@@ -8,6 +9,7 @@ import type {
 import {
   upsertCreatureState,
   getLatestCreature,
+  getPreviousCreature,
   getStreakCount,
   upsertDailyMetrics,
   getMetricsByDate,
@@ -88,7 +90,7 @@ export async function updateCreature(
 ): Promise<CreatureDisplay> {
   // Check cache first
   let metrics = getMetricsByDate(userId, date);
-  if (metrics) {
+  if (metrics && !isLegacyFallback(metrics)) {
     const fetchedAt = new Date(metrics.fetched_at).getTime();
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     if (fetchedAt > oneHourAgo) {
@@ -126,8 +128,8 @@ export async function updateCreature(
 
   // Calculate creature state
   const previous = getLatestCreature(userId);
-  const streak = getStreakCount(userId) + 1;
-  const hp = calculateHP(metrics, previous?.health_points ?? 50);
+  const streak = getStreakCount(userId, date) + 1;
+  const hp = calculateHP(metrics, getPreviousCreature(userId, date)?.health_points ?? 50);
   const isAlive = hp > 0;
 
   const creature = upsertCreatureState({

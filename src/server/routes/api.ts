@@ -1,3 +1,4 @@
+import { WhoopError } from "../../shared/whoop-client.cjs";
 import { Router, Request, Response } from "express";
 import { updateCreature } from "../services/creature.js";
 import {
@@ -38,6 +39,7 @@ router.get("/creature", requireUser, async (req: Request, res: Response) => {
     const display = await updateCreature(userId, today);
     res.json({ ...display, is_demo: isDemo });
   } catch (err) {
+    if (err instanceof WhoopError) { res.status(err.status).json({ error: err.code, message: err.message }); return; }
     console.error("Creature fetch error:", err);
     res.status(500).json({ error: "Failed to update creature", detail: String(err) });
   }
@@ -52,6 +54,7 @@ router.post("/creature/refresh", requireUser, async (req: Request, res: Response
     const display = await updateCreature(userId, today);
     res.json({ ...display, is_demo: isDemo });
   } catch (err) {
+    if (err instanceof WhoopError) { res.status(err.status).json({ error: err.code, message: err.message }); return; }
     console.error("Refresh error:", err);
     res.status(500).json({ error: "Failed to refresh", detail: String(err) });
   }

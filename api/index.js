@@ -1,3 +1,4 @@
+var { fetchWhoopMetrics: fetchMetrics, WhoopError, isLegacyFallback } = require("../src/shared/whoop-client.cjs");
 var { neon } = require("@neondatabase/serverless");
 
 function getDb() {
@@ -89,6 +90,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(404).json({ error: "Not found", url: url });
   } catch (err) {
+    if (err instanceof WhoopError) return res.status(err.status).json({ error: err.code, message: err.message });
     console.error("Handler error:", err);
     return res.status(500).json({ error: "Internal server error", message: String(err) });
   }
@@ -140,105 +142,10 @@ function generateDemoMetrics() {
 
 // --- WHOOP API ---
 async function fetchWhoopMetrics(user, sql) {
-  var accessToken = user.access_token;
-
-  // Refresh token if expired
-  if (Date.now() >= Number(user.token_expires_at) - 60000) {
-    try {
-      var refreshRes = await fetch("https://api.prod.whoop.com/oauth/oauth2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token: user.refresh_token,
-          client_id: process.env.WHOOP_CLIENT_ID || "",
-          client_secret: process.env.WHOOP_CLIENT_SECRET || "",
-        }),
-      });
-      if (refreshRes.ok) {
-        var tokens = await refreshRes.json();
-        accessToken = tokens.access_token;
-        var newExp = Date.now() + tokens.expires_in * 1000;
-        await sql`UPDATE users SET access_token = ${tokens.access_token}, refresh_token = ${tokens.refresh_token}, token_expires_at = ${newExp} WHERE id = ${user.id}`;
-      }
-    } catch (e) { /* use existing token */ }
-  }
-
-  var headers = { Authorization: "Bearer " + accessToken };
-  var BASE = "https://api.prod.whoop.com/developer";
-  var endpoints = {
-    cycle: BASE + "/v1/cycle?limit=1",
-    recovery_v2: BASE + "/v2/recovery?limit=1",
-    recovery_v1: BASE + "/v1/recovery?limit=1",
-    sleep_v2: BASE + "/v2/activity/sleep?limit=1",
-    sleep_v1: BASE + "/v1/activity/sleep?limit=1",
-  };
-
-  var responses = {};
-  await Promise.all(
-    Object.entries(endpoints).map(function (entry) {
-      return fetch(entry[1], { headers: headers })
-        .then(async function (r) {
-          var body = null;
-          try { var text = await r.text(); body = JSON.parse(text); } catch (e) { body = text; }
-          responses[entry[0]] = { status: r.status, ok: r.ok, body: body };
-        })
-        .catch(function (err) {
-          responses[entry[0]] = { status: 0, ok: false, error: String(err) };
-        });
-    })
-  );
-
-  var recovery = null, sleepScore = null, strain = null, hrv = null, rhr = null;
-
-  function firstRecord(resp) {
-    if (!resp || !resp.ok || !resp.body) return null;
-    var b = resp.body;
-    var arr = b.records || b.data || (Array.isArray(b) ? b : null);
-    if (arr && arr[0]) return arr[0];
-    if (typeof b === "object" && b.score) return b;
-    return null;
-  }
-
-  var recKeys = ["recovery_v2", "recovery_v1"];
-  for (var ri = 0; ri < recKeys.length; ri++) {
-    var rec = firstRecord(responses[recKeys[ri]]);
-    if (rec && rec.score) {
-      recovery = rec.score.recovery_score;
-      hrv = rec.score.hrv_rmssd_milli;
-      rhr = rec.score.resting_heart_rate;
-      break;
-    }
-  }
-
-  var sleepKeys = ["sleep_v2", "sleep_v1"];
-  for (var si = 0; si < sleepKeys.length; si++) {
-    var sleepRec = firstRecord(responses[sleepKeys[si]]);
-    if (sleepRec && sleepRec.score) {
-      sleepScore = sleepRec.score.sleep_performance_percentage;
-      break;
-    }
-  }
-
-  var cycleBody = responses.cycle && responses.cycle.ok && responses.cycle.body;
-  if (cycleBody) {
-    var cycleRec = cycleBody.records && cycleBody.records[0];
-    if (cycleRec && cycleRec.score) strain = cycleRec.score.strain;
-    if (recovery == null && cycleRec && cycleRec.recovery && cycleRec.recovery.score) {
-      recovery = cycleRec.recovery.score.recovery_score;
-      hrv = cycleRec.recovery.score.hrv_rmssd_milli;
-      rhr = cycleRec.recovery.score.resting_heart_rate;
-    }
-  }
-
-  return {
-    recovery: recovery != null ? recovery : 50,
-    sleep_score: sleepScore != null ? sleepScore : 50,
-    strain: strain != null ? strain : 10,
-    hrv: hrv != null ? hrv : 0,
-    rhr: rhr != null ? rhr : 0,
-    _raw: responses,
-  };
+  return fetchMetrics(user, async function(tokens) {
+    var expiresAt = Date.now() + tokens.expires_in * 1000;
+    await sql`UPDATE users SET access_token = ${tokens.access_token}, refresh_token = ${tokens.refresh_token}, token_expires_at = ${expiresAt} WHERE id = ${user.id}`;
+  });
 }
 
 // --- Creature engine ---
@@ -316,7 +223,7 @@ async function updateCreature(sql, userId, user, isDemo, date) {
   var cachedMetrics = cachedRows[0] || null;
 
   // Check if cache is fresh (< 1 hour)
-  if (cachedMetrics) {
+  if (cachedMetrics && !isLegacyFallback(cachedMetrics)) {
     var fetchedAt = new Date(cachedMetrics.fetched_at).getTime();
     if (Date.now() - fetchedAt < 3600000) {
       var creatureRows = await sql`SELECT * FROM creature_states WHERE user_id = ${userId} AND date = ${date}`;
@@ -377,7 +284,8 @@ async function updateCreature(sql, userId, user, isDemo, date) {
     streak = calcStreak(streakRows, date);
   }
 
-  var hp = calculateHP(metrics, previous ? Number(previous.health_points) : 50);
+  var baselineRows = isDemo ? [] : await sql`SELECT health_points FROM creature_states WHERE user_id = ${userId} AND date < ${date} ORDER BY date DESC LIMIT 1`;
+  var hp = calculateHP(metrics, baselineRows[0] ? Number(baselineRows[0].health_points) : 50);
   var isAlive = hp > 0;
   var mood = isAlive ? calculateMood(metrics) : "dead";
   var traits = calculateTraits(metrics, streak);

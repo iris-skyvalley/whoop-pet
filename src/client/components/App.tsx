@@ -7,7 +7,8 @@ import "../styles.css";
 
 export function App() {
   const [path, setPath] = useState(window.location.pathname);
-  const { display, status, isDemo, refresh } = useCreature();
+  const { display, status, isDemo, refresh, errorMessage, needsReconnect } =
+    useCreature();
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener("popstate", onPop);
@@ -71,16 +72,18 @@ export function App() {
           )}
           {status === "error" && (
             <div className="error-note" role="alert">
-              We couldn’t update your companion.{" "}
-              <button onClick={refresh}>Try again</button>
+              {errorMessage ||
+                "We couldn’t update your companion. Please try again."}{" "}
+              {needsReconnect ? (
+                <a href={import.meta.env.DEV ? "/auth/whoop" : "/api/auth"}>
+                  Reconnect WHOOP
+                </a>
+              ) : (
+                <button onClick={refresh}>Try again</button>
+              )}
             </div>
           )}
-          {display && (
-            <CreatureView
-              display={display}
-              isDemo={isDemo}
-            />
-          )}
+          {display && <CreatureView display={display} isDemo={isDemo} />}
         </main>
       )}
       <footer className="site-footer">

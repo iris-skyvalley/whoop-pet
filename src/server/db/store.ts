@@ -157,27 +157,20 @@ export function getLatestCreature(
   return latestCreature.get(userId);
 }
 
-export function getStreakCount(userId: string): number {
-  const all: CreatureState[] = [];
-  for (const c of creatures.values()) {
-    if (c.user_id === userId && c.is_alive) all.push(c);
-  }
-  if (all.length === 0) return 0;
+export function getPreviousCreature(userId: string, beforeDate: string): CreatureState | undefined {
+  return [...creatures.values()].filter(c => c.user_id === userId && c.date < beforeDate)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+}
 
-  all.sort((a, b) => b.date.localeCompare(a.date));
-  let streak = 1;
-  for (let i = 1; i < all.length; i++) {
-    const curr = new Date(all[i - 1].date);
-    const prev = new Date(all[i].date);
-    const diffDays =
-      (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      break;
-    }
+export function getStreakCount(userId: string, today: string): number {
+  let streak = 0;
+  const cursor = new Date(`${today}T00:00:00Z`);
+  while (true) {
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+    const state = creatures.get(`${userId}:${cursor.toISOString().slice(0, 10)}`);
+    if (!state?.is_alive) return streak;
+    streak++;
   }
-  return streak;
 }
 
 // --- Demo Mode ---
